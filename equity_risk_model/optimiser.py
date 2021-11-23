@@ -9,10 +9,9 @@ class BaseOptimiser(abc.ABC):
 
     Optimisation is performed using the package cvxpy and specifying a convex
     optimisation problem in the form,
-    
+
     .. math::
 
-     
        \begin{array}{ll}
        \mbox{minimize}   & (1/2)x^TPx + q^Tx\\
        \mbox{subject to} & Gx \leq h \\
@@ -159,7 +158,7 @@ class InternallyHedgedFactorTolerant(BaseOptimiser):
 
     def objective_function(self):
 
-        fm = (
+        cov_factor = (
             self.factor_model.loadings.T
             @ self.factor_model.covariance_factor
             @ self.factor_model.loadings
@@ -169,7 +168,7 @@ class InternallyHedgedFactorTolerant(BaseOptimiser):
             # Specific risk of the hedge portfolio
             cvxpy.QuadForm(self.x, self.factor_model.covariance_specific)
             # Factor risk of the end portfolio
-            + cvxpy.QuadForm(self.x + self.initial_weights, fm)
+            + cvxpy.QuadForm(self.x + self.initial_weights, cov_factor)
         )
 
     def constraints(self):
