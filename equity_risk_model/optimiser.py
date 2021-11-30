@@ -73,6 +73,13 @@ class MinimumVariance(PortfolioOptimiser):
         super().__init__(factor_model)
 
     def _objective_function(self) -> Minimize:
+        """Objective function for minimum variance optimisation
+
+        Returns
+        -------
+        Minimize
+            Quadratic form to calculate total covariance
+        """
         return cvxpy.Minimize(
             # Total Variance
             0.5
@@ -80,6 +87,14 @@ class MinimumVariance(PortfolioOptimiser):
         )
 
     def _constraints(self) -> List[Constraint]:
+        """Constraints for minimum variance optimisation
+
+        Returns
+        -------
+        List[Constraint]
+            Constraints to impose sum of weights equals unity and that all
+            weights are positive
+        """
         return [
             # Sum of weights equals unity
             numpy.ones((self.factor_model.n_assets)).T @ self.x == 1,
@@ -106,6 +121,14 @@ class MaximumSharpe(PortfolioOptimiser):
         super().__init__(factor_model)
 
     def _objective_function(self) -> Minimize:
+        """Objective function for maximum Sharpe optimisation
+
+        Returns
+        -------
+        Minimize
+            Quadratic form for total covariance minus risk preference adjusted
+            expected return
+        """
         return cvxpy.Minimize(
             # Total Variance
             0.5 * cvxpy.QuadForm(self.x, self.factor_model.covariance_total)
@@ -113,6 +136,14 @@ class MaximumSharpe(PortfolioOptimiser):
         )
 
     def _constraints(self) -> List[Constraint]:
+        """Constraints for maximum Sharpe optimisation
+
+        Returns
+        -------
+        List[Constraint]
+            Constraints to impose sum of weights equals unity and that all
+            weights are positive
+        """
         return [
             # Sum of weights equals unity
             numpy.ones((self.factor_model.n_assets)).T @ self.x == 1,
@@ -135,12 +166,26 @@ class ProportionalFactorNeutral(PortfolioOptimiser):
         super().__init__(factor_model)
 
     def _objective_function(self) -> Minimize:
+        """Objective function for proportional factor neutral optimisation
+
+        Returns
+        -------
+        Minimize
+            Sum of squares distance between weights and expected return
+        """
         return cvxpy.Minimize(
             # Distance between expected returns and portfolio weights
             cvxpy.sum_squares((self.x - self.expected_returns))
         )
 
     def _constraints(self) -> List[Constraint]:
+        """Constraints for proportional factor neutral optimisation
+
+        Returns
+        -------
+        List[Constraint]
+            Constraint to impose factor loading of end portfolio is zero
+        """
         return [
             # Factor loadings of the portfolio are zero
             self.factor_model.loadings @ self.x
@@ -161,7 +206,14 @@ class InternallyHedgedFactorNeutral(PortfolioOptimiser):
         self.initial_weights = initial_weights
         super().__init__(factor_model)
 
-    def _objective_function(self):
+    def _objective_function(self) -> Minimize:
+        """Objective function for internally hedged factor neutral optimisation
+
+        Returns
+        -------
+        Minimize
+            Quadratic form for specific variance of hedge portfolio
+        """
         return cvxpy.Minimize(
             # Specific Variance
             0.5
@@ -169,6 +221,13 @@ class InternallyHedgedFactorNeutral(PortfolioOptimiser):
         )
 
     def _constraints(self) -> List[Constraint]:
+        """Constraints for internally hedged factor neutral optimisation
+
+        Returns
+        -------
+        List[Constraint]
+            Constraint to impose factor loading of end portfolio is zero
+        """
         return [
             # Factor loadings of the portfolio are zero
             self.factor_model.loadings @ (self.x + self.initial_weights)
@@ -196,6 +255,14 @@ class InternallyHedgedFactorTolerant(PortfolioOptimiser):
         super().__init__(factor_model)
 
     def _objective_function(self) -> Minimize:
+        """Objective function for internally hedged factor tolerant optimisation
+
+        Returns
+        -------
+        Minimize
+            Quadratic form for specific variance of hedge portfolio plus
+            quadratic form for factor variance of the end portfolio
+        """
 
         cov_factor = (
             self.factor_model.loadings.T
@@ -211,6 +278,14 @@ class InternallyHedgedFactorTolerant(PortfolioOptimiser):
         )
 
     def _constraints(self) -> List[Constraint]:
+        """Constraints for internally hedged factor tolerant optimisation
+
+        Returns
+        -------
+        List[Constraint]
+            Constraint to impose factor risk of each factor is less than
+            specified upper bound
+        """
 
         A = numpy.multiply(
             self.factor_model.loadings.T,
