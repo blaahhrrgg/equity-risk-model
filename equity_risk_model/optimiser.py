@@ -38,7 +38,7 @@ class PortfolioOptimiser(cvxpy.Problem):
     The matrices P, G, and A as well as vectors q, h, and b are to be specified
     whereas the variable x is the optimisation variable.
     
-    The package `cvxpy` is used to solve the above problem.
+    The package `cvxpy` is used to solve the problem.
 
     See Also
     --------
@@ -255,7 +255,8 @@ class InternallyHedgedFactorTolerant(PortfolioOptimiser):
         super().__init__(factor_model)
 
     def _objective_function(self) -> Minimize:
-        """Objective function for internally hedged factor tolerant optimisation
+        """Objective function for internally hedged factor tolerant
+        optimisation
 
         Returns
         -------
