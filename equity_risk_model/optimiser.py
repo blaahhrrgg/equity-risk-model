@@ -7,8 +7,10 @@ import numpy
 class BaseOptimiser(abc.ABC):
     """Abstract base class from which all optimiser classes will inherit.
 
-    Optimisation is performed using the package cvxpy and specifying a convex
-    optimisation problem in the form,
+    The problem is specified in terms of a quadratic objective function with
+    affine equality and inequality constraints.
+
+    The standard form is the following:
 
     .. math::
 
@@ -18,25 +20,29 @@ class BaseOptimiser(abc.ABC):
                          & Ax = b.
        \end{array}
 
+    The matrices P, G, and A as well as vectors q, h, and b are to be specified
+    whereas the variable x is the optimisation variable.
+    
+    The package `cvxpy` is used to solve the above problem.
+
     See Also
     --------
     .. https://www.cvxpy.org/index.html
     """
 
-    def __init__(self, factor_model, verbose=False):
+    def __init__(self, factor_model):
         self.factor_model = factor_model
         self.x = cvxpy.Variable(self.factor_model.n_assets)
-        self.verbose = verbose
         self.problem = None
 
     @abc.abstractmethod
     def objective_function(self):
-        """Objective function of the optimisation problem"""
+        """Define objective function of the optimisation problem"""
         raise NotImplementedError
 
     @abc.abstractmethod
     def constraints(self):
-        """Constraints of the optimisation problem"""
+        """Define constraints of the optimisation problem"""
         raise NotImplementedError
 
     def setup_problem(self):
@@ -45,19 +51,19 @@ class BaseOptimiser(abc.ABC):
             self.objective_function(), self.constraints()
         )
 
-    def solve(self):
+    def solve(self, *args, **kwargs):
         """Solve the convex optimisation problem"""
         if not self.problem:
             self.setup_problem()
-        self.problem.solve(verbose=self.verbose)
+        self.problem.solve(*args, **kwargs)
         return self
 
 
 class MinimumVariance(BaseOptimiser):
     """Minimum Variance Long-Only Portfolio"""
 
-    def __init__(self, factor_model, verbose=False):
-        super().__init__(factor_model, verbose)
+    def __init__(self, factor_model):
+        super().__init__(factor_model)
 
     def objective_function(self):
         return cvxpy.Minimize(
@@ -68,7 +74,7 @@ class MinimumVariance(BaseOptimiser):
 
     def constraints(self):
         return [
-            # Sum of weights equals one
+            # Sum of weights equals unity
             numpy.ones((self.factor_model.n_assets)).T @ self.x == 1,
             # All weights are positive (long only positions)
             self.x >= 0,
@@ -78,10 +84,8 @@ class MinimumVariance(BaseOptimiser):
 class MaximumSharpe(BaseOptimiser):
     """Maximum Sharpe Portfolio"""
 
-    def __init__(
-        self, factor_model, expected_returns, gamma=1.0, verbose=False
-    ):
-        super().__init__(factor_model, verbose)
+    def __init__(self, factor_model, expected_returns, gamma=1.0):
+        super().__init__(factor_model)
         self.gamma = gamma
         self.expected_returns = expected_returns
 
@@ -94,7 +98,7 @@ class MaximumSharpe(BaseOptimiser):
 
     def constraints(self):
         return [
-            # Sum of weights equals one
+            # Sum of weights equals unity
             numpy.ones((self.factor_model.n_assets)).T @ self.x == 1,
             # All weights are positive (long only positions)
             self.x >= 0,
@@ -104,8 +108,8 @@ class MaximumSharpe(BaseOptimiser):
 class ProportionalFactorNeutral(BaseOptimiser):
     """Proportional Factor Neutral Portfolio"""
 
-    def __init__(self, factor_model, expected_returns, verbose=False):
-        super().__init__(factor_model, verbose)
+    def __init__(self, factor_model, expected_returns):
+        super().__init__(factor_model)
         self.expected_returns = expected_returns
 
     def objective_function(self):
@@ -125,13 +129,15 @@ class ProportionalFactorNeutral(BaseOptimiser):
 class InternallyHedgedFactorNeutral(BaseOptimiser):
     """Internally Hedged Factor Neutral Portfolio"""
 
-    def __init__(self, factor_model, initial_weights, verbose=False):
-        super().__init__(factor_model, verbose)
+    def __init__(self, factor_model, initial_weights):
+        super().__init__(factor_model)
         self.initial_weights = initial_weights
 
     def objective_function(self):
         return cvxpy.Minimize(
-            cvxpy.QuadForm(self.x, self.factor_model.covariance_specific)
+            # Specific Variance
+            0.5
+            * cvxpy.QuadForm(self.x, self.factor_model.covariance_specific)
         )
 
     def constraints(self):
@@ -150,9 +156,8 @@ class InternallyHedgedFactorTolerant(BaseOptimiser):
         factor_model,
         initial_weights,
         factor_risk_upper_bounds,
-        verbose=False,
     ):
-        super().__init__(factor_model, verbose)
+        super().__init__(factor_model)
         self.initial_weights = initial_weights
         self.factor_risk_upper_bounds = factor_risk_upper_bounds
 
@@ -165,9 +170,9 @@ class InternallyHedgedFactorTolerant(BaseOptimiser):
         )
 
         return cvxpy.Minimize(
-            # Specific risk of the hedge portfolio
+            # Specific variance of the hedge portfolio
             cvxpy.QuadForm(self.x, self.factor_model.covariance_specific)
-            # Factor risk of the end portfolio
+            # Factor variance of the end portfolio
             + cvxpy.QuadForm(self.x + self.initial_weights, cov_factor)
         )
 
@@ -179,6 +184,7 @@ class InternallyHedgedFactorTolerant(BaseOptimiser):
         ).T
 
         return [
+            # End portfolio factor risk is less than upper bound
             A @ (self.x + self.initial_weights)
             <= self.factor_risk_upper_bounds,
             A @ -(self.x + self.initial_weights)

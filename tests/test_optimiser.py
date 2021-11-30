@@ -15,9 +15,7 @@ def test_abstract_methods():
 
 def test_min_variance(factor_model):
 
-    out = equity_risk_model.optimiser.MinimumVariance(
-        factor_model, verbose=False
-    ).solve()
+    out = equity_risk_model.optimiser.MinimumVariance(factor_model).solve()
 
     numpy.testing.assert_almost_equal(
         out.x.value,
@@ -30,7 +28,7 @@ def test_max_sharpe(factor_model):
     expected_returns = numpy.array([0.2, 0.1, 0.05, 0.1, 0.2])
 
     out = equity_risk_model.optimiser.MaximumSharpe(
-        factor_model, expected_returns, verbose=False
+        factor_model, expected_returns
     ).solve()
 
     numpy.testing.assert_almost_equal(
@@ -44,7 +42,7 @@ def test_proportional_factor_neutral(factor_model):
     expected_returns = numpy.array([0.2, 0.1, 0.05, 0.1, 0.2])
 
     out = equity_risk_model.optimiser.ProportionalFactorNeutral(
-        factor_model, expected_returns, verbose=False
+        factor_model, expected_returns
     ).solve()
 
     # Check weights
@@ -68,7 +66,7 @@ def test_internally_hedged_factor_neutral(factor_model):
     initial_weights = numpy.array([0.2, 0.2, 0.2, 0.2, 0.2])
 
     out = equity_risk_model.optimiser.InternallyHedgedFactorNeutral(
-        factor_model, initial_weights, verbose=False
+        factor_model, initial_weights
     ).solve()
 
     # Check weights
@@ -93,7 +91,7 @@ def test_internally_hedged_factor_tolerant(factor_model):
     factor_risk_upper_bounds = numpy.array([0.01, 0.01, 0.01])
 
     out = equity_risk_model.optimiser.InternallyHedgedFactorTolerant(
-        factor_model, initial_weights, factor_risk_upper_bounds, verbose=False
+        factor_model, initial_weights, factor_risk_upper_bounds
     ).solve()
 
     # Check weights
