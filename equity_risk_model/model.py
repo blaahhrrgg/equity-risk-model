@@ -20,6 +20,28 @@ class FactorRiskModel:
     covariance_specific: numpy.array
 
     @property
+    def n_assets(self) -> int:
+        """Number of assets in the factor model
+
+        Returns
+        -------
+        int
+            The number of assets in the factor model
+        """
+        return len(self.universe)
+
+    @property
+    def n_factors(self) -> int:
+        """Number of factors in the factor model
+
+        Returns
+        -------
+        int
+            The number of factors in the factor model
+        """
+        return len(self.factors)
+
+    @property
     def covariance_total(self) -> numpy.array:
         """The covariance matrix for total returns
 
