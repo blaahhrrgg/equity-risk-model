@@ -69,17 +69,17 @@ class MinimumVariance(PortfolioOptimiser):
     to positive weights that sum to unity.
     """
 
-    def __init__(self, factor_model):
+    def __init__(self, factor_model: FactorRiskModel):
         super().__init__(factor_model)
 
-    def _objective_function(self):
+    def _objective_function(self) -> Minimize:
         return cvxpy.Minimize(
             # Total Variance
             0.5
             * cvxpy.QuadForm(self.x, self.factor_model.covariance_total)
         )
 
-    def _constraints(self):
+    def _constraints(self) -> List[Constraint]:
         return [
             # Sum of weights equals unity
             numpy.ones((self.factor_model.n_assets)).T @ self.x == 1,
@@ -95,19 +95,24 @@ class MaximumSharpe(PortfolioOptimiser):
     subject to positive weights that sum to unity.
     """
 
-    def __init__(self, factor_model, expected_returns, gamma=1.0):
+    def __init__(
+        self,
+        factor_model: FactorRiskModel,
+        expected_returns: numpy.ndarray,
+        gamma: float = 1.0,
+    ):
         self.gamma = gamma
         self.expected_returns = expected_returns
         super().__init__(factor_model)
 
-    def _objective_function(self):
+    def _objective_function(self) -> Minimize:
         return cvxpy.Minimize(
             # Total Variance
             0.5 * cvxpy.QuadForm(self.x, self.factor_model.covariance_total)
             - self.gamma * self.expected_returns @ self.x
         )
 
-    def _constraints(self):
+    def _constraints(self) -> List[Constraint]:
         return [
             # Sum of weights equals unity
             numpy.ones((self.factor_model.n_assets)).T @ self.x == 1,
@@ -123,17 +128,19 @@ class ProportionalFactorNeutral(PortfolioOptimiser):
     assets subject to the portfolio being factor neutral.
     """
 
-    def __init__(self, factor_model, expected_returns):
+    def __init__(
+        self, factor_model: FactorRiskModel, expected_returns: numpy.ndarray
+    ):
         self.expected_returns = expected_returns
         super().__init__(factor_model)
 
-    def _objective_function(self):
+    def _objective_function(self) -> Minimize:
         return cvxpy.Minimize(
             # Distance between expected returns and portfolio weights
             cvxpy.sum_squares((self.x - self.expected_returns))
         )
 
-    def _constraints(self):
+    def _constraints(self) -> List[Constraint]:
         return [
             # Factor loadings of the portfolio are zero
             self.factor_model.loadings @ self.x
@@ -148,7 +155,9 @@ class InternallyHedgedFactorNeutral(PortfolioOptimiser):
     portfolio without changing the sign of any weight.
     """
 
-    def __init__(self, factor_model, initial_weights):
+    def __init__(
+        self, factor_model: FactorRiskModel, initial_weights: numpy.ndarray
+    ):
         self.initial_weights = initial_weights
         super().__init__(factor_model)
 
@@ -159,7 +168,7 @@ class InternallyHedgedFactorNeutral(PortfolioOptimiser):
             * cvxpy.QuadForm(self.x, self.factor_model.covariance_specific)
         )
 
-    def _constraints(self):
+    def _constraints(self) -> List[Constraint]:
         return [
             # Factor loadings of the portfolio are zero
             self.factor_model.loadings @ (self.x + self.initial_weights)
@@ -178,15 +187,15 @@ class InternallyHedgedFactorTolerant(PortfolioOptimiser):
 
     def __init__(
         self,
-        factor_model,
-        initial_weights,
-        factor_risk_upper_bounds,
+        factor_model: FactorRiskModel,
+        initial_weights: numpy.ndarray,
+        factor_risk_upper_bounds: numpy.ndarray,
     ):
         self.initial_weights = initial_weights
         self.factor_risk_upper_bounds = factor_risk_upper_bounds
         super().__init__(factor_model)
 
-    def _objective_function(self):
+    def _objective_function(self) -> Minimize:
 
         cov_factor = (
             self.factor_model.loadings.T
@@ -201,7 +210,7 @@ class InternallyHedgedFactorTolerant(PortfolioOptimiser):
             + cvxpy.QuadForm(self.x + self.initial_weights, cov_factor)
         )
 
-    def _constraints(self):
+    def _constraints(self) -> List[Constraint]:
 
         A = numpy.multiply(
             self.factor_model.loadings.T,
@@ -209,7 +218,7 @@ class InternallyHedgedFactorTolerant(PortfolioOptimiser):
         ).T
 
         return [
-            # Final portfolio factor risk is less than upper bound
+            # Final portfolio factor risk is less than or equal to upper bound
             A @ (self.x + self.initial_weights)
             <= self.factor_risk_upper_bounds,
             A @ -(self.x + self.initial_weights)
