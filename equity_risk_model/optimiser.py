@@ -1,11 +1,26 @@
-import abc
+from dataclasses import dataclass
+from typing import List, Protocol, Union
 
 import cvxpy
 import numpy
+from cvxpy.constraints.constraint import Constraint
+from cvxpy.problems.objective import Maximize, Minimize
 
 
-class BaseOptimiser(abc.ABC):
-    """Abstract base class from which all optimiser classes will inherit.
+@dataclass
+class FactorRiskModel(Protocol):
+    """Factor Risk Model"""
+
+    universe: numpy.array
+    factors: numpy.array
+    loadings: numpy.array
+    covariance_factor: numpy.array
+    covariance_specific: numpy.array
+    covariance_total: numpy.array
+
+
+class PortfolioOptimiser(cvxpy.Problem):
+    """Wrapper for cvxpy.Problem class to facilitate problem formulation.
 
     The problem is specified in terms of a quadratic objective function with
     affine equality and inequality constraints.
@@ -30,49 +45,41 @@ class BaseOptimiser(abc.ABC):
     .. https://www.cvxpy.org/index.html
     """
 
-    def __init__(self, factor_model):
+    def __init__(self, factor_model: FactorRiskModel):
         self.factor_model = factor_model
         self.x = cvxpy.Variable(self.factor_model.n_assets)
-        self.problem = None
+        super().__init__(
+            objective=self._objective_function(),
+            constraints=self._constraints(),
+        )
 
-    @abc.abstractmethod
-    def objective_function(self):
+    def _objective_function(self) -> Union[Minimize, Maximize]:
         """Define objective function of the optimisation problem"""
         raise NotImplementedError
 
-    @abc.abstractmethod
-    def constraints(self):
+    def _constraints(self) -> List[Constraint]:
         """Define constraints of the optimisation problem"""
         raise NotImplementedError
 
-    def setup_problem(self):
-        """Create the convex optimisation problem"""
-        self.problem = cvxpy.Problem(
-            self.objective_function(), self.constraints()
-        )
 
-    def solve(self, *args, **kwargs):
-        """Solve the convex optimisation problem"""
-        if not self.problem:
-            self.setup_problem()
-        self.problem.solve(*args, **kwargs)
-        return self
+class MinimumVariance(PortfolioOptimiser):
+    """Minimum Variance Long-Only Portfolio
 
-
-class MinimumVariance(BaseOptimiser):
-    """Minimum Variance Long-Only Portfolio"""
+    Find the portfolio weights which minimise the portfolio's variance subject
+    to positive weights that sum to unity.
+    """
 
     def __init__(self, factor_model):
         super().__init__(factor_model)
 
-    def objective_function(self):
+    def _objective_function(self):
         return cvxpy.Minimize(
             # Total Variance
             0.5
             * cvxpy.QuadForm(self.x, self.factor_model.covariance_total)
         )
 
-    def constraints(self):
+    def _constraints(self):
         return [
             # Sum of weights equals unity
             numpy.ones((self.factor_model.n_assets)).T @ self.x == 1,
@@ -81,22 +88,26 @@ class MinimumVariance(BaseOptimiser):
         ]
 
 
-class MaximumSharpe(BaseOptimiser):
-    """Maximum Sharpe Portfolio"""
+class MaximumSharpe(PortfolioOptimiser):
+    """Maximum Sharpe Portfolio
+
+    Find the portfolio weights which maximise the portfolio's Sharpe ratio
+    subject to positive weights that sum to unity.
+    """
 
     def __init__(self, factor_model, expected_returns, gamma=1.0):
-        super().__init__(factor_model)
         self.gamma = gamma
         self.expected_returns = expected_returns
+        super().__init__(factor_model)
 
-    def objective_function(self):
+    def _objective_function(self):
         return cvxpy.Minimize(
             # Total Variance
             0.5 * cvxpy.QuadForm(self.x, self.factor_model.covariance_total)
             - self.gamma * self.expected_returns @ self.x
         )
 
-    def constraints(self):
+    def _constraints(self):
         return [
             # Sum of weights equals unity
             numpy.ones((self.factor_model.n_assets)).T @ self.x == 1,
@@ -105,20 +116,24 @@ class MaximumSharpe(BaseOptimiser):
         ]
 
 
-class ProportionalFactorNeutral(BaseOptimiser):
-    """Proportional Factor Neutral Portfolio"""
+class ProportionalFactorNeutral(PortfolioOptimiser):
+    """Proportional Factor Neutral Portfolio
+
+    Find the portfolio weights proportional to the expected returns of the
+    assets subject to the portfolio being factor neutral.
+    """
 
     def __init__(self, factor_model, expected_returns):
-        super().__init__(factor_model)
         self.expected_returns = expected_returns
+        super().__init__(factor_model)
 
-    def objective_function(self):
+    def _objective_function(self):
         return cvxpy.Minimize(
             # Distance between expected returns and portfolio weights
             cvxpy.sum_squares((self.x - self.expected_returns))
         )
 
-    def constraints(self):
+    def _constraints(self):
         return [
             # Factor loadings of the portfolio are zero
             self.factor_model.loadings @ self.x
@@ -126,30 +141,40 @@ class ProportionalFactorNeutral(BaseOptimiser):
         ]
 
 
-class InternallyHedgedFactorNeutral(BaseOptimiser):
-    """Internally Hedged Factor Neutral Portfolio"""
+class InternallyHedgedFactorNeutral(PortfolioOptimiser):
+    """Internally Hedged Factor Neutral Portfolio
+
+    Finds the (internal) hedge portfolio that results in a factor neutral
+    portfolio without changing the sign of any weight.
+    """
 
     def __init__(self, factor_model, initial_weights):
-        super().__init__(factor_model)
         self.initial_weights = initial_weights
+        super().__init__(factor_model)
 
-    def objective_function(self):
+    def _objective_function(self):
         return cvxpy.Minimize(
             # Specific Variance
             0.5
             * cvxpy.QuadForm(self.x, self.factor_model.covariance_specific)
         )
 
-    def constraints(self):
+    def _constraints(self):
         return [
             # Factor loadings of the portfolio are zero
             self.factor_model.loadings @ (self.x + self.initial_weights)
             == numpy.zeros((self.factor_model.n_factors))
+            # Sign of weights does not change
+            # TODO!
         ]
 
 
-class InternallyHedgedFactorTolerant(BaseOptimiser):
-    """Internally Hedged Factor Tolerant Portfolio"""
+class InternallyHedgedFactorTolerant(PortfolioOptimiser):
+    """Internally Hedged Factor Tolerant Portfolio
+
+    Finds the internal hedge portfolio that results in a factor tolerant
+    portfolio (factor risk within specified bounds).
+    """
 
     def __init__(
         self,
@@ -157,11 +182,11 @@ class InternallyHedgedFactorTolerant(BaseOptimiser):
         initial_weights,
         factor_risk_upper_bounds,
     ):
-        super().__init__(factor_model)
         self.initial_weights = initial_weights
         self.factor_risk_upper_bounds = factor_risk_upper_bounds
+        super().__init__(factor_model)
 
-    def objective_function(self):
+    def _objective_function(self):
 
         cov_factor = (
             self.factor_model.loadings.T
@@ -176,7 +201,7 @@ class InternallyHedgedFactorTolerant(BaseOptimiser):
             + cvxpy.QuadForm(self.x + self.initial_weights, cov_factor)
         )
 
-    def constraints(self):
+    def _constraints(self):
 
         A = numpy.multiply(
             self.factor_model.loadings.T,
@@ -184,7 +209,7 @@ class InternallyHedgedFactorTolerant(BaseOptimiser):
         ).T
 
         return [
-            # End portfolio factor risk is less than upper bound
+            # Final portfolio factor risk is less than upper bound
             A @ (self.x + self.initial_weights)
             <= self.factor_risk_upper_bounds,
             A @ -(self.x + self.initial_weights)
