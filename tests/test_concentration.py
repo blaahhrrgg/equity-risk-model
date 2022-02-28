@@ -77,3 +77,15 @@ def test_min_assets(weights, expected, concentration_calculator):
         concentration_calculator.min_assets_for_mcsr_threshold(weights),
         expected,
     )
+
+
+@pytest.mark.parametrize(
+    "weights",
+    [(weights_equal)],
+)
+def test_summarise(weights, concentration_calculator):
+
+    out = concentration_calculator.summarise_portfolio(weights)
+
+    assert isinstance(out, dict)
+    assert out["NAssets"] == 5

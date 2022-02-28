@@ -1,4 +1,5 @@
 import numpy
+import pandas
 import pytest
 
 
@@ -118,4 +119,45 @@ def test_marginal_contributions_to_factor_risks(risk_calculator):
             axis=0,
         ).values,
         risk_calculator.factor_risks(weights).values,
+    )
+
+
+def test_factor_group_risk(risk_calculator_with_factor_groups):
+
+    weights = numpy.array([0.2] * 5)
+
+    factor_group_risk = risk_calculator_with_factor_groups.factor_group_risks(
+        weights
+    )
+
+    # Check structure
+    assert isinstance(factor_group_risk, dict)
+    assert set(factor_group_risk.keys()) == set(
+        risk_calculator_with_factor_groups.factor_model.factor_groups
+    )
+
+    # Check covariance
+    factor_group_covariance = (
+        risk_calculator_with_factor_groups.factor_group_covariance(weights)
+    )
+
+    numpy.testing.assert_almost_equal(factor_group_covariance, 0.0180776)
+
+
+def test_factor_group_factor_risk(risk_calculator_with_factor_groups):
+
+    weights = numpy.array([0.2] * 5)
+
+    factor_risks = risk_calculator_with_factor_groups.factor_risks(weights)
+
+    assert isinstance(factor_risks, pandas.Series)
+
+    # Check index has correct structure
+    assert isinstance(factor_risks.index, pandas.MultiIndex)
+
+    assert set(factor_risks.index.get_level_values(0)) == set(
+        risk_calculator_with_factor_groups.factor_model.factor_groups
+    )
+    assert set(factor_risks.index.get_level_values(1)) == set(
+        risk_calculator_with_factor_groups.factor_model.factors
     )
