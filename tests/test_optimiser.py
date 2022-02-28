@@ -2,12 +2,12 @@ import equity_risk_model
 import numpy
 import pytest
 
-from tests import factor_model
-
 
 def test_abstract_methods():
     with pytest.raises(NotImplementedError):
-        equity_risk_model.optimiser.PortfolioOptimiser._objective_function(None)
+        equity_risk_model.optimiser.PortfolioOptimiser._objective_function(
+            None
+        )
 
     with pytest.raises(NotImplementedError):
         equity_risk_model.optimiser.PortfolioOptimiser._constraints(None)
@@ -55,7 +55,7 @@ def test_proportional_factor_neutral(factor_model):
     )
 
     # Validate factor risk is zero
-    factor_risks = equity_risk_model.calculator.RiskCalculator(
+    factor_risks = equity_risk_model.risk.RiskCalculator(
         factor_model
     ).factor_risks(opt.x.value)
 
@@ -80,7 +80,7 @@ def test_internally_hedged_factor_neutral(factor_model):
     )
 
     # Validate factor risk is zero
-    factor_risks = equity_risk_model.calculator.RiskCalculator(
+    factor_risks = equity_risk_model.risk.RiskCalculator(
         factor_model
     ).factor_risks(opt.x.value + initial_weights)
 
@@ -108,7 +108,7 @@ def test_internally_hedged_factor_tolerant(factor_model):
     )
 
     # Validate factor risks are less than specified upper bound
-    factor_risks = equity_risk_model.calculator.RiskCalculator(
+    factor_risks = equity_risk_model.risk.RiskCalculator(
         factor_model
     ).factor_risks(opt.x.value + initial_weights)
 

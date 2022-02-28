@@ -1,4 +1,3 @@
-import equity_risk_model
 import numpy
 import pytest
 
@@ -17,10 +16,10 @@ weights_longshort2 = numpy.array([-1, 2 / 3.0, 2 / 3.0, 2 / 3.0])
         (weights_longshort2, 3 / 7.0),
     ],
 )
-def test_enc(weights, expected):
+def test_enc(weights, expected, concentration_calculator):
 
     numpy.testing.assert_almost_equal(
-        equity_risk_model.concentration.enc(weights), expected
+        concentration_calculator.enc(weights), expected
     )
 
 
@@ -30,8 +29,51 @@ def test_enc(weights, expected):
         (weights_equal, 5),
     ],
 )
-def test_entropy(weights, expected):
+def test_entropy(weights, expected, concentration_calculator):
 
     numpy.testing.assert_almost_equal(
-        equity_risk_model.concentration.entropy(weights), expected
+        concentration_calculator.entropy(weights), expected
+    )
+
+
+@pytest.mark.parametrize(
+    "weights, expected",
+    [(weights_equal, 3.7346305378867153), (weights_concentrated, 1)],
+)
+def test_effective_number_of_correlated_bets(
+    weights, expected, concentration_calculator
+):
+
+    numpy.testing.assert_almost_equal(
+        concentration_calculator.number_of_correlated_bets(weights),
+        expected,
+    )
+
+
+@pytest.mark.parametrize(
+    "weights, expected",
+    [(weights_equal, 3.9823008849557513), (weights_concentrated, 1)],
+)
+def test_effective_number_of_uncorrelated_bets(
+    weights, expected, concentration_calculator
+):
+
+    numpy.testing.assert_almost_equal(
+        concentration_calculator.number_of_uncorrelated_bets(weights),
+        expected,
+    )
+
+
+@pytest.mark.parametrize(
+    "weights, expected",
+    [
+        (weights_equal, 2),
+        (weights_concentrated, 1),
+    ],
+)
+def test_min_assets(weights, expected, concentration_calculator):
+
+    numpy.testing.assert_almost_equal(
+        concentration_calculator.min_assets_for_mcsr_threshold(weights),
+        expected,
     )

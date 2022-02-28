@@ -1,7 +1,11 @@
 import numpy
-from typing import Dict
+import pandas
+from typing import Dict, Union
 
 from .model import FactorRiskModel
+
+
+PortfolioWeights = Union[numpy.array, pandas.Series]
 
 
 class RiskCalculator:
@@ -13,7 +17,7 @@ class RiskCalculator:
     def __init__(self, factor_model: FactorRiskModel):
         self.factor_model = factor_model
 
-    def total_risk(self, weights: numpy.array) -> float:
+    def total_risk(self, weights: PortfolioWeights) -> float:
         """The total risk of the portfolio
 
         Parameters
@@ -30,7 +34,7 @@ class RiskCalculator:
             weights.T @ self.factor_model.covariance_total @ weights
         )
 
-    def total_factor_risk(self, weights: numpy.array) -> float:
+    def total_factor_risk(self, weights: PortfolioWeights) -> float:
         """The total factor risk of the portfolio
 
         Parameters
@@ -47,7 +51,7 @@ class RiskCalculator:
         x = weights @ self.factor_model.loadings.T
         return numpy.sqrt(x.T @ self.factor_model.covariance_factor @ x)
 
-    def total_specific_risk(self, weights: numpy.array) -> float:
+    def total_specific_risk(self, weights: PortfolioWeights) -> float:
         """The total specific risk of the portfolio
 
         Parameters
@@ -65,7 +69,9 @@ class RiskCalculator:
             weights.T @ self.factor_model.covariance_specific @ weights
         )
 
-    def factor_group_risks(self, weights: numpy.array) -> Dict[str, float]:
+    def factor_group_risks(
+        self, weights: PortfolioWeights
+    ) -> Dict[str, float]:
         """The risk associated with each factor group in the equity factor
         model
 
@@ -93,7 +99,7 @@ class RiskCalculator:
 
         return out
 
-    def factor_group_covariance(self, weights: numpy.array) -> float:
+    def factor_group_covariance(self, weights: PortfolioWeights) -> float:
         """Risk associated with covariances between the factor groups
 
         Parameters
@@ -113,7 +119,7 @@ class RiskCalculator:
             )
         )
 
-    def factor_risks(self, weights: numpy.array) -> numpy.array:
+    def factor_risks(self, weights: PortfolioWeights) -> numpy.array:
         """The risk associated with each factor in the equity factor model
 
         Parameters
@@ -133,11 +139,17 @@ class RiskCalculator:
             )
         )
 
-        factor_risks.index = self.factor_model.factor_index
+        if isinstance(factor_risks, (numpy.ndarray, numpy.generic)):
+            factor_risks = pandas.Series(
+                data=factor_risks, index=self.factor_model.factor_index
+            )
+
+        elif isinstance(factor_risks, pandas.Series):
+            factor_risks.index = self.factor_model.factor_index
 
         return factor_risks
 
-    def factor_risk_covariance(self, weights: numpy.array) -> float:
+    def factor_risk_covariance(self, weights: PortfolioWeights) -> float:
         """Risk associated with covariances between the factors
 
         Parameters
@@ -156,7 +168,7 @@ class RiskCalculator:
         )
 
     def marginal_contribution_to_total_risk(
-        self, weights: numpy.array
+        self, weights: PortfolioWeights
     ) -> numpy.array:
         """Marginal contribution to the total risk from each asset
 
@@ -171,9 +183,14 @@ class RiskCalculator:
             An array of marginal risk contributions to the total risk from
             each asset in the portfolio
         """
-        return numpy.multiply(
+        q = numpy.multiply(
             weights, self.factor_model.covariance_total @ weights
         ) / self.total_risk(weights)
+
+        if isinstance(q, (numpy.ndarray, numpy.generic)):
+            mctr = pandas.Series(data=q, index=self.factor_model.universe)
+
+        return mctr
 
     def marginal_contribution_to_total_factor_risk(
         self, weights: numpy.array
@@ -197,12 +214,17 @@ class RiskCalculator:
             @ self.factor_model.loadings
         )
 
-        return numpy.multiply(weights, cov @ weights) / self.total_factor_risk(
+        q = numpy.multiply(weights, cov @ weights) / self.total_factor_risk(
             weights
         )
 
+        if isinstance(q, (numpy.ndarray, numpy.generic)):
+            mcfr = pandas.Series(data=q, index=self.factor_model.universe)
+
+        return mcfr
+
     def marginal_contribution_to_total_specific_risk(
-        self, weights: numpy.array
+        self, weights: PortfolioWeights
     ) -> numpy.array:
         """Marginal contribution to the total specific risk from each asset
 
@@ -217,13 +239,18 @@ class RiskCalculator:
             An array of marginal risk contributions to the total specific risk
             from each asset in the portfolio
         """
-        return numpy.multiply(
+        q = numpy.multiply(
             weights, self.factor_model.covariance_specific @ weights
         ) / self.total_specific_risk(weights)
 
+        if isinstance(q, (numpy.ndarray, numpy.generic)):
+            mcsr = pandas.Series(data=q, index=self.factor_model.universe)
+
+        return mcsr
+
     def marginal_contributions_to_factor_risks(
-        self, weights: numpy.array
-    ) -> numpy.array:
+        self, weights: PortfolioWeights
+    ) -> pandas.DataFrame:
         """Marginal contribution to the risk of each factor from each asset
 
         Parameters
@@ -233,16 +260,23 @@ class RiskCalculator:
 
         Returns
         -------
-        numpy.array
+        pandas.DataFrame
             A matrix of marginal risk contribution where element [i, j] is the
-            contribution of asset j to factor i.
+            contribution of asset i to factor j.
         """
+        # Only take diagonal elements
         cov = numpy.diag(numpy.diag(self.factor_model.covariance_factor))
 
-        return numpy.divide(
+        mcfr = numpy.divide(
             numpy.multiply(
                 numpy.multiply(self.factor_model.loadings, weights.T).T,
                 (cov @ self.factor_model.loadings @ weights),
             ),
-            self.factor_risks(weights),
-        ).T
+            self.factor_risks(weights).values,
+        )
+
+        return pandas.DataFrame(
+            data=mcfr,
+            index=self.factor_model.universe,
+            columns=self.factor_model.factor_index,
+        )

@@ -1,8 +1,6 @@
 import numpy
 import pytest
 
-from tests import risk_calculator
-
 
 @pytest.mark.parametrize(
     "weights, expected",
@@ -117,27 +115,7 @@ def test_marginal_contributions_to_factor_risks(risk_calculator):
     numpy.testing.assert_almost_equal(
         numpy.sum(
             risk_calculator.marginal_contributions_to_factor_risks(weights),
-            axis=1,
-        ),
-        risk_calculator.factor_risks(weights),
-    )
-
-
-def test_effective_number_of_correlated_bets(risk_calculator):
-
-    weights = numpy.array([0.2] * 5)
-
-    numpy.testing.assert_almost_equal(
-        risk_calculator.effective_number_of_correlated_bets(weights),
-        3.7346305378867153,
-    )
-
-
-def test_effective_number_of_uncorrelated_bets(risk_calculator):
-
-    weights = numpy.array([0.2] * 5)
-
-    numpy.testing.assert_almost_equal(
-        risk_calculator.effective_number_of_uncorrelated_bets(weights),
-        3.9823008849557513,
+            axis=0,
+        ).values,
+        risk_calculator.factor_risks(weights).values,
     )
