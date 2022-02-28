@@ -1,21 +1,7 @@
-from dataclasses import dataclass
-from typing import Protocol
-
 import numpy
+from typing import Dict
 
-import equity_risk_model
-
-
-@dataclass
-class FactorRiskModel(Protocol):
-    """Factor Risk Model"""
-
-    universe: numpy.array
-    factors: numpy.array
-    loadings: numpy.array
-    covariance_factor: numpy.array
-    covariance_specific: numpy.array
-    covariance_total: numpy.array
+from .model import FactorRiskModel
 
 
 class RiskCalculator:
@@ -79,6 +65,54 @@ class RiskCalculator:
             weights.T @ self.factor_model.covariance_specific @ weights
         )
 
+    def factor_group_risks(self, weights: numpy.array) -> Dict[str, float]:
+        """The risk associated with each factor group in the equity factor
+        model
+
+        Parameters
+        ----------
+        weights : numpy.array
+            The holding weights of each asset of the portfolio
+
+        Returns
+        -------
+        numpy.array
+            The risk associated with each factor group in the equity factor
+            model
+        """
+        out = {}
+
+        for group, factors in self.factor_model.factor_group_mapping.items():
+
+            loading = self.factor_model.loadings.loc[factors]
+            cov_f = self.factor_model.covariance_factor.loc[factors, factors]
+
+            sigma_f = loading.T @ cov_f @ loading
+
+            out[group] = numpy.sqrt(weights.T @ sigma_f @ weights)
+
+        return out
+
+    def factor_group_covariance(self, weights: numpy.array) -> float:
+        """Risk associated with covariances between the factor groups
+
+        Parameters
+        ----------
+        weights : numpy.array
+            The holding weights of each asset of the portfolio
+
+        Returns
+        -------
+        float
+            The risk due to covariances between factors
+        """
+        return numpy.sqrt(
+            self.total_factor_risk(weights) ** 2
+            - numpy.sum(
+                numpy.power(list(self.factor_group_risks(weights).values()), 2)
+            )
+        )
+
     def factor_risks(self, weights: numpy.array) -> numpy.array:
         """The risk associated with each factor in the equity factor model
 
@@ -92,12 +126,16 @@ class RiskCalculator:
         numpy.array
             The risk associated with each factor in the equity factor model
         """
-        return numpy.sqrt(
+        factor_risks = numpy.sqrt(
             numpy.multiply(
                 (self.factor_model.loadings @ weights) ** 2,
                 numpy.diag(self.factor_model.covariance_factor),
             )
         )
+
+        factor_risks.index = self.factor_model.factor_index
+
+        return factor_risks
 
     def factor_risk_covariance(self, weights: numpy.array) -> float:
         """Risk associated with covariances between the factors
@@ -208,61 +246,3 @@ class RiskCalculator:
             ),
             self.factor_risks(weights),
         ).T
-
-    def effective_number_of_correlated_bets(
-        self, weights: numpy.array
-    ) -> float:
-        """Effective number of correlated bets in the portfolio
-
-        The normalised marginal contribution to the total risk of the portfolio
-        from each asset is used in the calculation of the effective number of
-        constituents.
-
-        Parameters
-        ----------
-        weights : numpy.array
-            The holding weights of each asset of the portfolio
-
-        Returns
-        -------
-        float
-            The effective number of correlated bets in the portfolio
-
-        See Also
-        --------
-        equity_risk_model.concentration.enc
-        """
-        q = self.marginal_contribution_to_total_risk(weights) / self.total_risk(
-            weights
-        )
-
-        return equity_risk_model.concentration.enc(q)
-
-    def effective_number_of_uncorrelated_bets(
-        self, weights: numpy.array
-    ) -> float:
-        """Effective number of uncorrelated bets in the portfolio
-
-        The normalised marginal contribution to the total specific risk of the
-        portfolio from each asset is used in the calculation of the effective
-        number of constituents.
-
-        Parameters
-        ----------
-        weights : numpy.array
-            The holding weights of each asset of the portfolio
-
-        Returns
-        -------
-        float
-            The effective number of uncorrelated bets in the portfolio
-
-        See Also
-        --------
-        equity_risk_model.concentration.enc
-        """
-        q = self.marginal_contribution_to_total_specific_risk(
-            weights
-        ) / self.total_specific_risk(weights)
-
-        return equity_risk_model.concentration.enc(q)
