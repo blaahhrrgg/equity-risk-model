@@ -3,7 +3,15 @@ from typing import Union, Dict
 
 
 class ConcentrationCalculator:
-    """ConcentrationCalculator provides methods to calculate standard"""
+    """ConcentrationCalculator provides methods to calculate measures of
+    concentration or diviersification of a portfolio.
+
+    References
+    ----------
+    .. Carli, T., Deguest, R. and Martellini, L., 2014. Improved risk reporting
+    with factor-based diversification measures. EDHEC-Risk Institute
+    Publications.
+    """
 
     def __init__(self, risk_calculator):
         self.risk_calculator = risk_calculator

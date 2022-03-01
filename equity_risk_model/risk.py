@@ -9,9 +9,13 @@ PortfolioWeights = Union[numpy.array, pandas.Series]
 
 
 class RiskCalculator:
-    """Risk Calculator
+    """Risk Calculator provides methods to calculate the risk of a portfolio
+    using and factor risk model.
 
-    Calculates a number of risk measures using an equity factor risk model.
+    References
+    ----------
+    .. Menchero, J., Orr, D.J., Wang, J., 2011. The Barra US Equity Model
+    (USE4) Methodology Notes.
     """
 
     def __init__(self, factor_model: FactorRiskModel):
