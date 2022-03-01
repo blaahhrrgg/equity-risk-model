@@ -7,7 +7,7 @@ setuptools.setup(
     version="0.0.3",
     description="Portfolio analysis using an equity multi-factor risk model.",
     packages=setuptools.find_packages(),
-    install_requires=["cvxpy", "numpy", "scipy"],
+    install_requires=["cvxpy", "numpy", "pandas", "scipy"],
     tests_require=tests_require,
     extras_requires={"test": tests_require},
 )
