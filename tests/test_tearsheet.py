@@ -34,11 +34,20 @@ def factor_risk_tearsheet(risk_calculator_with_factor_groups):
 
 
 @pytest.fixture(scope="class")
-def portfolio_weights():
+def portfolio_weights(factor_model):
     return {
-        "EqualWeights": numpy.array([0.2, 0.2, 0.2, 0.2, 0.2]),
-        "ConcentratedPortfolio": numpy.array([1, 0, 0, 0, 0]),
-        "LongShortPortfolio": numpy.array([0.4, 0.4, 0.2, -0.6, -0.4]),
+        "EqualWeights": pandas.Series(
+            data=numpy.array([0.2, 0.2, 0.2, 0.2, 0.2]),
+            index=factor_model.universe,
+        ),
+        "ConcentratedPortfolio": pandas.Series(
+            data=numpy.array([1.0, 0.0, 0.0, 0.0, 0.0]),
+            index=factor_model.universe,
+        ),
+        "LongShortPortfolio": pandas.Series(
+            data=numpy.array([0.4, 0.4, 0.2, -0.6, -0.4]),
+            index=factor_model.universe,
+        ),
     }
 
 

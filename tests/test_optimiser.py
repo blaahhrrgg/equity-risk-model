@@ -1,4 +1,5 @@
 import equity_risk_model
+import pandas
 import numpy
 import pytest
 
@@ -55,9 +56,11 @@ def test_proportional_factor_neutral(factor_model):
     )
 
     # Validate factor risk is zero
+    w_opt = pandas.Series(data=opt.x.value, index=factor_model.universe)
+
     factor_risks = equity_risk_model.risk.RiskCalculator(
         factor_model
-    ).factor_risks(opt.x.value)
+    ).factor_risks(w_opt)
 
     numpy.testing.assert_almost_equal(
         factor_risks, numpy.zeros((factor_model.n_factors))
@@ -66,7 +69,9 @@ def test_proportional_factor_neutral(factor_model):
 
 def test_internally_hedged_factor_neutral(factor_model):
 
-    initial_weights = numpy.array([0.2, 0.2, 0.2, 0.2, 0.2])
+    initial_weights = pandas.Series(
+        data=[0.2, 0.2, 0.2, 0.2, 0.2], index=factor_model.universe
+    )
 
     opt = equity_risk_model.optimiser.InternallyHedgedFactorNeutral(
         factor_model, initial_weights
@@ -91,7 +96,10 @@ def test_internally_hedged_factor_neutral(factor_model):
 
 def test_internally_hedged_factor_tolerant(factor_model):
 
-    initial_weights = numpy.array([0.2, 0.2, 0.2, 0.2, 0.2])
+    initial_weights = pandas.Series(
+        data=[0.2, 0.2, 0.2, 0.2, 0.2], index=factor_model.universe
+    )
+
     factor_risk_upper_bounds = numpy.array([0.01, 0.01, 0.01])
 
     opt = equity_risk_model.optimiser.InternallyHedgedFactorTolerant(

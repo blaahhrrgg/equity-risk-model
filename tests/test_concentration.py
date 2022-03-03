@@ -1,4 +1,5 @@
 import numpy
+import pandas
 import pytest
 
 weights_concentrated = numpy.array([1, 0, 0, 0, 0])
@@ -44,8 +45,13 @@ def test_effective_number_of_correlated_bets(
     weights, expected, concentration_calculator
 ):
 
+    p = pandas.Series(
+        data=weights,
+        index=concentration_calculator.risk_calculator.factor_model.universe,
+    )
+
     numpy.testing.assert_almost_equal(
-        concentration_calculator.number_of_correlated_bets(weights),
+        concentration_calculator.number_of_correlated_bets(p),
         expected,
     )
 
@@ -58,8 +64,13 @@ def test_effective_number_of_uncorrelated_bets(
     weights, expected, concentration_calculator
 ):
 
+    p = pandas.Series(
+        data=weights,
+        index=concentration_calculator.risk_calculator.factor_model.universe,
+    )
+
     numpy.testing.assert_almost_equal(
-        concentration_calculator.number_of_uncorrelated_bets(weights),
+        concentration_calculator.number_of_uncorrelated_bets(p),
         expected,
     )
 
@@ -73,8 +84,13 @@ def test_effective_number_of_uncorrelated_bets(
 )
 def test_min_assets(weights, expected, concentration_calculator):
 
+    p = pandas.Series(
+        data=weights,
+        index=concentration_calculator.risk_calculator.factor_model.universe,
+    )
+
     numpy.testing.assert_almost_equal(
-        concentration_calculator.min_assets_for_mcsr_threshold(weights),
+        concentration_calculator.min_assets_for_mcsr_threshold(p),
         expected,
     )
 
@@ -85,7 +101,12 @@ def test_min_assets(weights, expected, concentration_calculator):
 )
 def test_summarise(weights, concentration_calculator):
 
-    out = concentration_calculator.summarise_portfolio(weights)
+    p = pandas.Series(
+        data=weights,
+        index=concentration_calculator.risk_calculator.factor_model.universe,
+    )
+
+    out = concentration_calculator.summarise_portfolio(p)
 
     assert isinstance(out, dict)
     assert out["NAssets"] == 5
