@@ -6,17 +6,7 @@ import numpy
 from cvxpy.constraints.constraint import Constraint
 from cvxpy.problems.objective import Maximize, Minimize
 
-
-@dataclass
-class FactorRiskModel(Protocol):
-    """Factor Risk Model"""
-
-    universe: numpy.array
-    factors: numpy.array
-    loadings: numpy.array
-    covariance_factor: numpy.array
-    covariance_specific: numpy.array
-    covariance_total: numpy.array
+from equity_risk_model.model import FactorRiskModel
 
 
 class PortfolioOptimiser(cvxpy.Problem):
@@ -37,7 +27,7 @@ class PortfolioOptimiser(cvxpy.Problem):
 
     The matrices P, G, and A as well as vectors q, h, and b are to be specified
     whereas the variable x is the optimisation variable.
-    
+
     The package `cvxpy` is used to solve the problem.
 
     See Also
@@ -188,7 +178,7 @@ class ProportionalFactorNeutral(PortfolioOptimiser):
         """
         return [
             # Factor loadings of the portfolio are zero
-            self.factor_model.loadings @ self.x
+            self.factor_model.loadings.values @ self.x
             == numpy.zeros((self.factor_model.n_factors))
         ]
 
@@ -230,7 +220,7 @@ class InternallyHedgedFactorNeutral(PortfolioOptimiser):
         """
         return [
             # Factor loadings of the portfolio are zero
-            self.factor_model.loadings @ (self.x + self.initial_weights)
+            self.factor_model.loadings.values @ (self.x + self.initial_weights)
             == numpy.zeros((self.factor_model.n_factors))
             # Sign of weights does not change
             # TODO!
@@ -291,7 +281,7 @@ class InternallyHedgedFactorTolerant(PortfolioOptimiser):
         A = numpy.multiply(
             self.factor_model.loadings.T,
             numpy.sqrt(numpy.diag(self.factor_model.covariance_factor)),
-        ).T
+        ).T.values
 
         return [
             # Final portfolio factor risk is less than or equal to upper bound

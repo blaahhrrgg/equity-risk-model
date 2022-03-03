@@ -1,5 +1,8 @@
 import numpy
+import pandas
 from typing import Union, Dict
+
+PortfolioWeights = pandas.Series
 
 
 class ConcentrationCalculator:
@@ -63,7 +66,7 @@ class ConcentrationCalculator:
         """
         return numpy.linalg.norm(weights, alpha) ** (alpha / (1 - alpha))
 
-    def number_of_correlated_bets(self, weights: numpy.array) -> float:
+    def number_of_correlated_bets(self, weights: PortfolioWeights) -> float:
         """Effective number of correlated bets in the portfolio
 
         The normalised marginal contribution to the total risk of the portfolio
@@ -72,7 +75,7 @@ class ConcentrationCalculator:
 
         Parameters
         ----------
-        weights : numpy.array
+        weights : PortfolioWeights
             The holding weights of each asset of the portfolio
 
         Returns
@@ -90,7 +93,7 @@ class ConcentrationCalculator:
 
         return self.enc(q)
 
-    def number_of_uncorrelated_bets(self, weights: numpy.array) -> float:
+    def number_of_uncorrelated_bets(self, weights: PortfolioWeights) -> float:
         """Effective number of uncorrelated bets in the portfolio
 
         The normalised marginal contribution to the total specific risk of the
@@ -99,7 +102,7 @@ class ConcentrationCalculator:
 
         Parameters
         ----------
-        weights : numpy.array
+        weights : PortfolioWeights
             The holding weights of each asset of the portfolio
 
         Returns
@@ -118,14 +121,14 @@ class ConcentrationCalculator:
         return self.enc(q)
 
     def min_assets_for_mcsr_threshold(
-        self, weights: numpy.array, threshold: float = 0.5
+        self, weights: PortfolioWeights, threshold: float = 0.5
     ) -> int:
         """The minimum number of assets required to reach a given specific risk
         contribution threshold
 
         Parameters
         ----------
-        weights : numpy.array
+        weights : PortfolioWeights
             The holding weights of each asset of the portfolio
         threshold : float, optional
             The target cumulative specific risk contribution, by default 0.5
@@ -149,13 +152,13 @@ class ConcentrationCalculator:
         ) + 1
 
     def summarise_portfolio(
-        self, weights: numpy.array
+        self, weights: PortfolioWeights
     ) -> Dict[str, Union[int, float]]:
         """Summarise concentration metrics in dictionary format
 
         Parameters
         ----------
-        weights : numpy.array
+        weights : PortfolioWeights
             The holding weights of each asset of the portfolio
 
         Returns

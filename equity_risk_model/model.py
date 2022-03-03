@@ -13,14 +13,34 @@ class FactorRiskModel:
     risk attribution. For a universe of n assets and m factors, the risk model
     is given by a m by n matrix of factor loadings, a m by m matrix of factor
     covariances and a n by n (diagonal) matrix of specific asset returns.
+
+    Attributes
+    ----------
+    universe : numpy.array
+        An array of security identifiers that define the model universe
+    factors : numpy.array
+        An array of factor names for factors in the model
+    loadings : pandas.DataFrame
+        A matrix of factor loadings for the assets in the universe, the index
+        should correspond to `factors` whilst the columns should correspond to
+        `universe`
+    covariance_factor : pandas.DataFrame
+        A matrix of factor covariances, both the index and columns should
+        correspond to `factors`
+    covariance_specific : pandas.DataFrame
+        A diagonal matrix of specific variances, both the index and columns
+        should correspond to `universe`.
+    factor_group_mapping : Dict[str, str], optional
+        A dictionary keyed by factor group names with values corresponding to
+        a list of factor names in the corresponding factor group.
     """
 
     universe: numpy.array
     factors: numpy.array
-    loadings: numpy.array
-    covariance_factor: numpy.array
-    covariance_specific: numpy.array
-    factor_group_mapping: Dict[str, str] = dataclasses.field(
+    loadings: pandas.DataFrame
+    covariance_factor: pandas.DataFrame
+    covariance_specific: pandas.DataFrame
+    factor_group_mapping: Dict[str, List[str]] = dataclasses.field(
         default_factory=lambda: {}
     )
 
