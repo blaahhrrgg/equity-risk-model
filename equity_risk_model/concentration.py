@@ -166,7 +166,7 @@ class ConcentrationCalculator:
         """
 
         return {
-            "NAssets": len(weights),
+            "NAssets": min(len(weights), len(weights[weights != 0])),
             "NCorrelatedBets": self.number_of_correlated_bets(weights),
             "NUncorrelatedBets": self.number_of_uncorrelated_bets(weights),
             "NEffectiveConstituents": self.enc(weights),
@@ -175,5 +175,8 @@ class ConcentrationCalculator:
             ),
             "NAssets>50%SpecificRisk": self.min_assets_for_mcsr_threshold(
                 weights, 0.5
+            ),
+            "NAssets>75%SpecificRisk": self.min_assets_for_mcsr_threshold(
+                weights, 0.75
             ),
         }
