@@ -291,16 +291,10 @@ class RiskCalculator:
         # Only take diagonal elements
         cov = numpy.diag(numpy.diag(self.factor_model.covariance_factor))
 
-        mcfr = numpy.divide(
+        return numpy.divide(
             numpy.multiply(
                 numpy.multiply(self.factor_model.loadings, weights.T).T,
                 (cov @ self.factor_model.loadings @ weights),
             ),
             self.factor_risks(weights).values,
-        )
-
-        return pandas.DataFrame(
-            data=mcfr,
-            index=self.factor_model.universe,
-            columns=self.factor_model.factor_index,
-        )
+        ).fillna(value=0)
