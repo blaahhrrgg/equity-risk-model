@@ -218,12 +218,14 @@ class InternallyHedgedFactorNeutral(PortfolioOptimiser):
         List[Constraint]
             Constraint to impose factor loading of end portfolio is zero
         """
+        P = numpy.diag(numpy.sign(self.initial_weights))
+
         return [
             # Factor loadings of the portfolio are zero
             self.factor_model.loadings.values @ (self.x + self.initial_weights)
-            == numpy.zeros((self.factor_model.n_factors))
-            # Sign of weights does not change
-            # TODO!
+            == numpy.zeros((self.factor_model.n_factors)),
+            # Sign of weights of the portfolio do not change
+            -P @ self.x <= numpy.abs(self.initial_weights),
         ]
 
 
