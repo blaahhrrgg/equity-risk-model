@@ -1,5 +1,4 @@
-from dataclasses import dataclass
-from typing import List, Protocol, Union
+from typing import List, Union
 
 import cvxpy
 import numpy
