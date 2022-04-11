@@ -1,8 +1,7 @@
-from ast import Call
 import logging
 import numpy
 import pandas
-from typing import Dict, Union, Callable
+from typing import Dict, Callable
 
 from .model import FactorRiskModel
 
@@ -203,10 +202,10 @@ class RiskCalculator:
         return numpy.sign(difference) * numpy.sqrt(abs(difference))
 
     @_reindex_weights
-    def marginal_contribution_to_total_risk(
+    def contribution_to_total_risk(
         self, weights: PortfolioWeights
     ) -> numpy.array:
-        """Marginal contribution to the total risk from each asset
+        """Contribution to the total risk from each asset
 
         Parameters
         ----------
@@ -216,18 +215,18 @@ class RiskCalculator:
         Returns
         -------
         numpy.array
-            An array of marginal risk contributions to the total risk from
-            each asset in the portfolio
+            An array of risk contributions to the total risk from each asset
+            in the portfolio
         """
         return numpy.multiply(
             weights, self.factor_model.covariance_total @ weights
         ) / self.total_risk(weights)
 
     @_reindex_weights
-    def marginal_contribution_to_total_factor_risk(
+    def contribution_to_total_factor_risk(
         self, weights: numpy.array
     ) -> numpy.array:
-        """Marginal contribution to the total factor risk from each asset
+        """Contribution to the total factor risk from each asset
 
         Parameters
         ----------
@@ -237,8 +236,8 @@ class RiskCalculator:
         Returns
         -------
         numpy.array
-            An array of marginal risk contributions to the total factor risk
-            from each asset in the portfolio
+            An array of risk contributions to the total factor risk from each
+            asset in the portfolio
         """
         cov = (
             self.factor_model.loadings.T
@@ -251,10 +250,10 @@ class RiskCalculator:
         )
 
     @_reindex_weights
-    def marginal_contribution_to_total_specific_risk(
+    def contribution_to_total_specific_risk(
         self, weights: PortfolioWeights
     ) -> numpy.array:
-        """Marginal contribution to the total specific risk from each asset
+        """Contribution to the total specific risk from each asset
 
         Parameters
         ----------
@@ -264,18 +263,18 @@ class RiskCalculator:
         Returns
         -------
         numpy.array
-            An array of marginal risk contributions to the total specific risk
-            from each asset in the portfolio
+            An array of risk contributions to the total specific risk from
+            each asset in the portfolio
         """
         return numpy.multiply(
             weights, self.factor_model.covariance_specific @ weights
         ) / self.total_specific_risk(weights)
 
     @_reindex_weights
-    def marginal_contributions_to_factor_risks(
+    def contributions_to_factor_risks(
         self, weights: PortfolioWeights
     ) -> pandas.DataFrame:
-        """Marginal contribution to the risk of each factor from each asset
+        """Contributions to the risk of each factor from each asset
 
         Parameters
         ----------
@@ -285,7 +284,7 @@ class RiskCalculator:
         Returns
         -------
         pandas.DataFrame
-            A matrix of marginal risk contribution where element [i, j] is the
+            A matrix of risk contributions where element [i, j] is the
             contribution of asset i to factor j.
         """
         # Only take diagonal elements
