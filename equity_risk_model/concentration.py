@@ -69,8 +69,8 @@ class ConcentrationCalculator:
     def number_of_correlated_bets(self, weights: PortfolioWeights) -> float:
         """Effective number of correlated bets in the portfolio
 
-        The normalised marginal contribution to the total risk of the portfolio
-        from each asset is used in the calculation of the effective number of
+        The normalised contribution to the total risk of the portfolio from
+        each asset is used in the calculation of the effective number of
         constituents.
 
         Parameters
@@ -87,7 +87,7 @@ class ConcentrationCalculator:
         --------
         equity_risk_model.concentration.enc
         """
-        q = self.risk_calculator.marginal_contribution_to_total_risk(
+        q = self.risk_calculator.contribution_to_total_risk(
             weights
         ) / self.risk_calculator.total_risk(weights)
 
@@ -96,9 +96,9 @@ class ConcentrationCalculator:
     def number_of_uncorrelated_bets(self, weights: PortfolioWeights) -> float:
         """Effective number of uncorrelated bets in the portfolio
 
-        The normalised marginal contribution to the total specific risk of the
-        portfolio from each asset is used in the calculation of the effective
-        number of constituents.
+        The normalised contribution to the total specific risk of the portfolio
+        from each asset is used in the calculation of the effective number
+        of constituents.
 
         Parameters
         ----------
@@ -114,7 +114,7 @@ class ConcentrationCalculator:
         --------
         equity_risk_model.concentration.enc
         """
-        q = self.risk_calculator.marginal_contribution_to_total_specific_risk(
+        q = self.risk_calculator.contribution_to_total_specific_risk(
             weights
         ) / self.risk_calculator.total_specific_risk(weights)
 
@@ -136,11 +136,11 @@ class ConcentrationCalculator:
         Returns
         -------
         int
-            The minimum number of assets required to reach marginal specific
-            risk contribution
+            The minimum number of assets required to reach the specific
+            risk contribution threshold
         """
 
-        q = self.risk_calculator.marginal_contribution_to_total_specific_risk(
+        q = self.risk_calculator.contribution_to_total_specific_risk(
             weights
         ) / self.risk_calculator.total_specific_risk(weights)
 

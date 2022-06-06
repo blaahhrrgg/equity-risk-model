@@ -79,7 +79,7 @@ def test_factor_covariance(weights, expected, risk_calculator):
     )
 
 
-def test_marginal_contributions_to_total_risk(risk_calculator):
+def test_contributions_to_total_risk(risk_calculator):
 
     expected = numpy.array(
         [0.028867, 0.0312458, 0.0308141, -0.0014833, 0.0476819]
@@ -90,12 +90,12 @@ def test_marginal_contributions_to_total_risk(risk_calculator):
     )
 
     numpy.testing.assert_almost_equal(
-        risk_calculator.marginal_contribution_to_total_risk(p),
+        risk_calculator.contribution_to_total_risk(p),
         expected,
     )
 
 
-def test_marginal_contributions_to_total_factor_risk(risk_calculator):
+def test_contributions_to_total_factor_risk(risk_calculator):
 
     p = pandas.Series(
         data=[0.2] * 5, index=risk_calculator.factor_model.universe
@@ -106,12 +106,12 @@ def test_marginal_contributions_to_total_factor_risk(risk_calculator):
     )
 
     numpy.testing.assert_almost_equal(
-        risk_calculator.marginal_contribution_to_total_factor_risk(p),
+        risk_calculator.contribution_to_total_factor_risk(p),
         expected,
     )
 
 
-def test_marginal_contributions_to_total_specific_risk(risk_calculator):
+def test_contributions_to_total_specific_risk(risk_calculator):
 
     p = pandas.Series(
         data=[0.2] * 5, index=risk_calculator.factor_model.universe
@@ -121,12 +121,12 @@ def test_marginal_contributions_to_total_specific_risk(risk_calculator):
     )
 
     numpy.testing.assert_almost_equal(
-        risk_calculator.marginal_contribution_to_total_specific_risk(p),
+        risk_calculator.contribution_to_total_specific_risk(p),
         expected,
     )
 
 
-def test_marginal_contributions_to_factor_risks(risk_calculator):
+def test_contributions_to_factor_risks(risk_calculator):
 
     p = pandas.Series(
         data=[0.2] * 5, index=risk_calculator.factor_model.universe
@@ -134,7 +134,7 @@ def test_marginal_contributions_to_factor_risks(risk_calculator):
 
     numpy.testing.assert_almost_equal(
         numpy.sum(
-            risk_calculator.marginal_contributions_to_factor_risks(p),
+            risk_calculator.contributions_to_factor_risks(p),
             axis=0,
         ).values,
         risk_calculator.factor_risks(p).values,
