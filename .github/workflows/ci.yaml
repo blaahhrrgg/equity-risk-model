@@ -24,5 +24,5 @@ jobs:
         run: |
           pip install pytest
           pip install pytest-cov
-          python -m pytest --doctest-modules --junitxml=junit/test-results.xml --cov=equity_risk_model --cov-report=xml --cov-report=html
+          python -m pytest tests/ --doctest-modules --junitxml=junit/test-results.xml --cov=equity_risk_model --cov-report=xml --cov-report=html
           coverage report -m
