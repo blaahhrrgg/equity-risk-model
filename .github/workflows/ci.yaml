@@ -20,9 +20,13 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install .
-      - name: Run tests with pytest
-        run: |
           pip install pytest
           pip install pytest-cov
+          pip install pytest-cases
+      - name: Run tests with pytest
+        run: |
           python -m pytest tests/ --doctest-modules --junitxml=junit/test-results.xml --cov=equity_risk_model --cov-report=xml --cov-report=html
+          coverage report -m
+      - name: Run coverage
+        run: |
           coverage report -m

@@ -1,6 +1,11 @@
 import setuptools
 
-tests_require = ["pytest>=6.1.1", "coverage>=5.3", "pytest-cov>=2.10.1"]
+tests_require = [
+    "pytest>=6.1.1",
+    "coverage>=5.3",
+    "pytest-cov>=2.10.1",
+    "pytest-cases==3.6.9",
+]
 
 setuptools.setup(
     name="equity-risk-model",
